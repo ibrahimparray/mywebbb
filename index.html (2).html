@@ -1,0 +1,980 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebCraft by Ibrahim Parray</title>
+    <base target="_self">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@preline/preline@2.0.0/dist/preline.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vanilla-tilt@1.7.0/dist/vanilla-tilt.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .pricing-card:hover {
+            transform: scale(1.03);
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        .tilt-effect {
+            transition: transform 0.2s ease;
+        }
+        
+        .cart-item {
+            transition: all 0.3s ease;
+        }
+        
+        .cart-item:hover {
+            background-color: rgba(0,0,0,0.05);
+        }
+        
+        .btn-pulse:hover {
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .nav-link::after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 2px;
+            background: #3b82f6;
+            transition: width 0.3s;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+    <!-- 3D Background Canvas -->
+    <div id="canvas-container"></div>
+    
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md fixed w-full z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-cube text-blue-500 text-2xl mr-2"></i>
+                        <span class="text-xl font-bold text-gray-800 dark:text-white">WebCraft by Ibrahim Parray</span>
+                    </div>
+                    <div class="hidden sm:ml-6 sm:flex sm:space-x-8">
+                        <a href="#" class="nav-link border-blue-500 text-gray-900 dark:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="showSection('home')">Home</a>
+                        <a href="#" class="nav-link border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="showSection('products')">Products</a>
+                        <a href="#" class="nav-link border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="showSection('pricing')">Pricing</a>
+                        <a href="#" class="nav-link border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700 dark:hover:text-white inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" onclick="showSection('contact')">Contact</a>
+                    </div>
+                </div>
+                <div class="hidden sm:ml-6 sm:flex sm:items-center">
+                    <button type="button" class="relative rounded-full bg-white dark:bg-gray-800 p-1 text-gray-400 hover:text-gray-500 dark:hover:text-white focus:outline-none" onclick="toggleCart()">
+                        <span class="sr-only">View cart</span>
+                        <i class="fas fa-shopping-cart h-6 w-6"></i>
+                        <span id="cart-count" class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                    </button>
+                    <div class="ml-3 relative">
+                        <div>
+                            <button type="button" class="flex rounded-full bg-white dark:bg-gray-800 text-sm focus:outline-none" id="user-menu-button" aria-expanded="false" aria-haspopup="true" onclick="toggleUserMenu()">
+                                <span class="sr-only">Open user menu</span>
+                                <div class="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </button>
+                        </div>
+                        <div id="user-menu" class="hidden absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white dark:bg-gray-800 py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showSection('profile')">Your Profile</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showSection('orders')">Your Orders</a>
+                            <a href="#" class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="logout()">Sign out</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="-mr-2 flex items-center sm:hidden">
+                    <button type="button" class="inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500 dark:hover:bg-gray-700 dark:hover:text-white focus:outline-none" onclick="toggleMobileMenu()">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars h-6 w-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="hidden sm:hidden bg-white dark:bg-gray-800 shadow-lg">
+            <div class="pt-2 pb-3 space-y-1">
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700" onclick="showSection('home')">Home</a>
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick="showSection('products')">Products</a>
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick="showSection('pricing')">Pricing</a>
+                <a href="#" class="block px-3 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700" onclick="showSection('contact')">Contact</a>
+                <div class="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
+                    <div class="flex items-center px-4">
+                        <div class="flex-shrink-0">
+                            <div class="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3">
+                            <div class="text-base font-medium text-gray-800 dark:text-white">Welcome</div>
+                            <div class="text-sm font-medium text-gray-500 dark:text-gray-300">Guest</div>
+                        </div>
+                        <button type="button" class="ml-auto flex-shrink-0 rounded-full bg-white dark:bg-gray-800 p-1 text-gray-400 hover:text-gray-500 dark:hover:text-white focus:outline-none" onclick="toggleCart()">
+                            <span class="sr-only">View cart</span>
+                            <i class="fas fa-shopping-cart h-6 w-6"></i>
+                            <span id="mobile-cart-count" class="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">0</span>
+                        </button>
+                    </div>
+                    <div class="mt-3 space-y-1">
+                        <a href="#" class="block px-4 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showSection('profile')">Your Profile</a>
+                        <a href="#" class="block px-4 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="showSection('orders')">Your Orders</a>
+                        <a href="#" class="block px-4 py-2 text-base font-medium text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700" onclick="logout()">Sign out</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Shopping Cart Sidebar -->
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 z-20 w-full max-w-md bg-white dark:bg-gray-800 shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out">
+        <div class="flex flex-col h-full">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-medium text-gray-900 dark:text-white">Order Summary</h2>
+                <button type="button" class="text-gray-400 hover:text-gray-500 dark:hover:text-white" onclick="toggleCart()">
+                    <span class="sr-only">Close cart</span>
+                    <i class="fas fa-times h-6 w-6"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-4">
+                <div id="cart-items" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <!-- Cart items will be added here dynamically -->
+                    <p class="text-gray-500 dark:text-gray-400 text-center py-8">Your cart is empty</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-200 dark:border-gray-700 px-6 py-4">
+                <div class="flex justify-between text-base font-medium text-gray-900 dark:text-white mb-4">
+                    <p>Subtotal</p>
+                    <p id="cart-subtotal">$0.00</p>
+                </div>
+                <button onclick="placeOrder()" class="flex justify-center items-center px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 w-full btn-pulse">
+                    Place Order
+                </button>
+                <p class="mt-2 text-center text-sm text-gray-500 dark:text-gray-400">
+                    or <button onclick="toggleCart()" class="text-blue-600 dark:text-blue-400 font-medium">Continue Shopping</button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <main class="pt-16 pb-12">
+        <!-- Home Section -->
+        <section id="home-section" class="section-content">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="lg:grid lg:grid-cols-2 lg:gap-8 items-center">
+                    <div class="mb-8 lg:mb-0">
+                        <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white sm:text-5xl lg:text-6xl">
+                            Build Your Dream Website with <span class="text-blue-600">WebCraft</span>
+                        </h1>
+                        <p class="mt-3 text-xl text-gray-500 dark:text-gray-300 sm:mt-5">
+                            Professional website solutions with stunning 3D features and seamless user experience.
+                        </p>
+                        <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                            <button onclick="showSection('pricing')" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 btn-pulse">
+                                Get Started
+                            </button>
+                            <button onclick="showSection('products')" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-blue-100 hover:bg-blue-200 dark:text-blue-300 dark:bg-blue-900 dark:hover:bg-blue-800 md:py-4 md:text-lg md:px-10">
+                                View Products
+                            </button>
+                        </div>
+                    </div>
+                    <div class="relative">
+                        <div class="relative w-full rounded-lg overflow-hidden shadow-xl tilt-effect" data-tilt>
+                            <div class="aspect-w-16 aspect-h-9">
+                                <img src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2850&q=80" alt="Web development" class="w-full h-full object-cover">
+                            </div>
+                            <div class="absolute inset-0 bg-gradient-to-t from-blue-600 to-transparent opacity-50"></div>
+                            <div class="absolute bottom-0 left-0 p-6">
+                                <h3 class="text-xl font-bold text-white">3D Website Showcase</h3>
+                                <p class="text-blue-100">Experience the future of web design</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Products Section -->
+        <section id="products-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                        Our <span class="text-blue-600">Products</span>
+                    </h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-300 sm:mt-4">
+                        Choose from our range of website solutions
+                    </p>
+                </div>
+                
+                <div class="mt-12 grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    <!-- Product cards will be added here dynamically -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Pricing Section -->
+        <section id="pricing-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center">
+                    <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                        Simple, transparent <span class="text-blue-600">pricing</span>
+                    </h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-300 sm:mt-4">
+                        One-time payment. No hidden fees. No monthly subscriptions.
+                    </p>
+                </div>
+                
+                <div class="mt-12 space-y-8 lg:space-y-0 lg:grid lg:grid-cols-3 lg:gap-x-8">
+                    <!-- Pricing cards will be added here dynamically -->
+                </div>
+            </div>
+        </section>
+        
+        <!-- Contact Section -->
+        <section id="contact-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-8">
+                    Contact <span class="text-blue-600">Us</span>
+                </h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                        <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                                Send us a message
+                            </h3>
+                        </div>
+                        <div class="px-6 py-5">
+                            <form id="contact-form" class="space-y-6">
+                                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div>
+                                        <label for="contact-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Name</label>
+                                        <input type="text" name="contact-name" id="contact-name" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    </div>
+                                    <div>
+                                        <label for="contact-email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                                        <input type="email" name="contact-email" id="contact-email" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="contact-subject" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Subject</label>
+                                    <input type="text" name="contact-subject" id="contact-subject" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                </div>
+                                <div>
+                                    <label for="contact-message" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Message</label>
+                                    <textarea name="contact-message" id="contact-message" rows="4" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white"></textarea>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="button" onclick="sendMessage()" class="px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 btn-pulse">
+                                        Send Message
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                            <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                                <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                                    Contact Information
+                                </h3>
+                            </div>
+                            <div class="px-6 py-5">
+                                <div class="space-y-6">
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 h-6 w-6 text-blue-500">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <div class="ml-3 text-sm">
+                                            <p class="text-gray-500 dark:text-gray-400">Email us at</p>
+                                            <a href="mailto:ibrahimparray066@gmail.com" class="font-medium text-gray-900 dark:text-white">ibrahimparray066@gmail.com</a>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 h-6 w-6 text-blue-500">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </div>
+                                        <div class="ml-3 text-sm">
+                                            <p class="text-gray-500 dark:text-gray-400">WhatsApp</p>
+                                            <a href="https://wa.me/917780886656" class="font-medium text-gray-900 dark:text-white">+91 7780886656</a>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 h-6 w-6 text-blue-500">
+                                            <i class="fab fa-instagram"></i>
+                                        </div>
+                                        <div class="ml-3 text-sm">
+                                            <p class="text-gray-500 dark:text-gray-400">Follow us on Instagram</p>
+                                            <a href="https://instagram.com/ibrahim__066_" class="font-medium text-gray-900 dark:text-white">@ibrahim__066_</a>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start">
+                                        <div class="flex-shrink-0 h-6 w-6 text-blue-500">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </div>
+                                        <div class="ml-3 text-sm">
+                                            <p class="text-gray-500 dark:text-gray-400">Our location</p>
+                                            <p class="font-medium text-gray-900 dark:text-white">J&K Srinagar 190017</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Profile Section -->
+        <section id="profile-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-8">
+                    Your <span class="text-blue-600">Profile</span>
+                </h2>
+                
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                            Personal Information
+                        </h3>
+                    </div>
+                    <div class="px-6 py-5">
+                        <form class="space-y-6">
+                            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div>
+                                    <label for="first-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">First name</label>
+                                    <input type="text" name="first-name" id="first-name" autocomplete="given-name" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                </div>
+                                <div>
+                                    <label for="last-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Last name</label>
+                                    <input type="text" name="last-name" id="last-name" autocomplete="family-name" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
+                                <input type="email" name="email" id="email" autocomplete="email" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone number</label>
+                                <input type="tel" name="phone" id="phone" autocomplete="tel" class="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button" class="bg-blue-600 border border-transparent rounded-md shadow-sm py-2 px-4 inline-flex justify-center text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                    Save changes
+                                </button>
+                            </div>
+                            </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Orders Section -->
+        <section id="orders-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <h2 class="text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl mb-8">
+                    Your <span class="text-blue-600">Orders</span>
+                </h2>
+                
+                <div class="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
+                    <div class="px-6 py-5 border-b border-gray-200 dark:border-gray-700">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900 dark:text-white">
+                            Order History
+                        </h3>
+                    </div>
+                    <div class="px-6 py-5">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                                <thead class="bg-gray-50 dark:bg-gray-700">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Order #</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Date</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Items</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Total</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                    <!-- Orders will be added here dynamically -->
+                                    <tr>
+                                        <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">You haven't placed any orders yet.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Order Success Section -->
+        <section id="order-success-section" class="section-content hidden">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="text-center">
+                    <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <h2 class="mt-3 text-3xl font-extrabold text-gray-900 dark:text-white sm:text-4xl">
+                        Order <span class="text-green-600">Placed</span>!
+                    </h2>
+                    <p class="mt-3 max-w-2xl mx-auto text-xl text-gray-500 dark:text-gray-300">
+                        Thank you for your order. We'll contact you shortly to confirm the details.
+                    </p>
+                    <div class="mt-10">
+                        <button onclick="showSection('home')" class="px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10 btn-pulse">
+                            Back to Home
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">WebCraft by Ibrahim Parray</h3>
+                    <p class="text-gray-500 dark:text-gray-400">
+                        Professional website solutions with stunning 3D features and seamless user experience.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" onclick="showSection('home')">Home</a></li>
+                        <li><a href="#" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" onclick="showSection('products')">Products</a></li>
+                        <li><a href="#" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" onclick="showSection('pricing')">Pricing</a></li>
+                        <li><a href="#" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" onclick="showSection('contact')">Contact</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Contact</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center text-gray-500 dark:text-gray-400"><i class="fas fa-envelope mr-2"></i> ibrahimparray066@gmail.com</li>
+                        <li class="flex items-center text-gray-500 dark:text-gray-400"><i class="fab fa-whatsapp mr-2"></i> +91 7780886656</li>
+                        <li class="flex items-center text-gray-500 dark:text-gray-400"><i class="fab fa-instagram mr-2"></i> @ibrahim__066_</li>
+                        <li class="flex items-center text-gray-500 dark:text-gray-400"><i class="fas fa-map-marker-alt mr-2"></i> J&K Srinagar 190017</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-12 pt-8 border-t border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-500 dark:text-gray-400 text-sm">
+                    &copy; 2023 WebCraft by Ibrahim Parray. All rights reserved.
+                </p>
+                <div class="mt-4 md:mt-0 flex space-x-6">
+                    <a href="https://instagram.com/ibrahim__066_" class="text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                        <span class="sr-only">Instagram</span>
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="https://wa.me/917780886656" class="text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                        <span class="sr-only">WhatsApp</span>
+                        <i class="fab fa-whatsapp"></i>
+                    </a>
+                    <a href="mailto:ibrahimparray066@gmail.com" class="text-gray-400 hover:text-gray-500 dark:hover:text-white">
+                        <span class="sr-only">Email</span>
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        // Data arrays
+        const products = [
+            {
+                id: 1,
+                name: "Basic Website",
+                description: "Perfect for small businesses or personal websites. Includes 1-page design with basic features.",
+                price: 15,
+                features: ["1-page design", "Basic layout", "Mobile responsive", "Contact form", "Basic SEO"],
+                image: "https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 2,
+                name: "Premium Website",
+                description: "Ideal for growing businesses. Multi-page website with advanced design elements.",
+                price: 30,
+                features: ["Multi-page design", "Advanced layout", "Mobile responsive", "Contact form", "SEO optimized", "Social media integration"],
+                image: "https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 3,
+                name: "E-commerce Website",
+                description: "Complete online store with product management and order system.",
+                price: 40,
+                features: ["E-commerce functionality", "Product management", "Mobile responsive", "SEO optimized", "Order tracking"],
+                image: "https://images.unsplash.com/photo-1556740738-b6a63e27c4df?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 4,
+                name: "3D Website Add-on",
+                description: "Enhance your website with stunning 3D elements and interactive features.",
+                price: 25,
+                features: ["3D product showcase", "Interactive elements", "Smooth animations", "WebGL support", "Performance optimized"],
+                image: "https://images.unsplash.com/photo-1639762681057-408e52192e55?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 5,
+                name: "SEO Package",
+                description: "Boost your website's visibility with our comprehensive SEO package.",
+                price: 20,
+                features: ["Keyword research", "On-page optimization", "Technical SEO", "Content strategy", "Monthly reports"],
+                image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            },
+            {
+                id: 6,
+                name: "Maintenance Package",
+                description: "Keep your website running smoothly with our maintenance services.",
+                price: 15,
+                features: ["Monthly updates", "Security monitoring", "Backup services", "Performance checks", "Content updates"],
+                image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+            }
+        ];
+        
+        const pricingPackages = [
+            {
+                id: 'basic',
+                name: 'Basic',
+                price: 15,
+                description: 'Perfect for small businesses or personal websites',
+                features: [
+                    '1-page website',
+                    'Basic design',
+                    'Mobile responsive',
+                    'Contact form',
+                    'Basic SEO',
+                    '1 revision'
+                ],
+                popular: false
+            },
+            {
+                id: 'premium',
+                name: 'Premium',
+                price: 30,
+                description: 'Ideal for growing businesses with more complex needs',
+                features: [
+                    'Multi-page website (up to 5 pages)',
+                    'Advanced design',
+                    'Mobile responsive',
+                    'Contact form',
+                    'SEO optimized',
+                    'Social media integration',
+                    '3 revisions'
+                ],
+                popular: true
+            },
+            {
+                id: 'ecommerce',
+                name: 'E-commerce',
+                price: 40,
+                description: 'Complete online store with all essential features',
+                features: [
+                    'E-commerce functionality',
+                    'Product management',
+                    'Mobile responsive',
+                    'SEO optimized',
+                    'Order tracking',
+                    '5 revisions'
+                ],
+                popular: false
+            }
+        ];
+        
+        // State management
+        let cart = [];
+        let currentSection = 'home';
+        
+        // DOM elements
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const cartSubtotal = document.getElementById('cart-subtotal');
+        const cartCount = document.getElementById('cart-count');
+        const mobileCartCount = document.getElementById('mobile-cart-count');
+        const userMenu = document.getElementById('user-menu');
+        const mobileMenu = document.getElementById('mobile-menu');
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            renderProducts();
+            renderPricingPackages();
+            init3DBackground();
+            initTiltEffects();
+            showSection('home');
+            
+            // Prevent default anchor behavior
+            document.querySelectorAll('a').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                });
+            });
+        });
+        
+        // 3D Background Initialization
+        function init3DBackground() {
+            const container = document.getElementById('canvas-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ alpha: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            container.appendChild(renderer.domElement);
+            
+            // Create floating cubes
+            const cubes = [];
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x3b82f6,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.5
+            });
+            
+            for (let i = 0; i < 5; i++) {
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.x = Math.random() * 10 - 5;
+                cube.position.y = Math.random() * 10 - 5;
+                cube.position.z = Math.random() * 10 - 5;
+                cube.rotation.x = Math.random() * Math.PI;
+                cube.rotation.y = Math.random() * Math.PI;
+                cubes.push(cube);
+                scene.add(cube);
+            }
+            
+            camera.position.z = 5;
+            
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                
+                cubes.forEach(cube => {
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                });
+                
+                renderer.render(scene, camera);
+            }
+            
+            animate();
+            
+            // Handle window resize
+            window.addEventListener('resize', function() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        
+        // Initialize tilt effects
+        function initTiltEffects() {
+            VanillaTilt.init(document.querySelectorAll(".tilt-effect"), {
+                max: 15,
+                speed: 400,
+                glare: true,
+                "max-glare": 0.2,
+            });
+        }
+        
+        // Render products
+        function renderProducts() {
+            const container = document.querySelector('#products-section .grid');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300';
+                productCard.innerHTML = `
+                    <div class="h-48 overflow-hidden">
+                        <img src="${product.image}" alt="${product.name}" class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">${product.name}</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-4">${product.description}</p>
+                        <div class="mb-4">
+                            ${product.features.map(feature => `
+                                <div class="flex items-center mb-1">
+                                    <i class="fas fa-check text-green-500 mr-2 text-sm"></i>
+                                    <span class="text-sm text-gray-600 dark:text-gray-300">${feature}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-2xl font-bold text-gray-900 dark:text-white">$${product.price}</span>
+                            <button onclick="addToCart(${product.id})" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300 btn-pulse">
+                                Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+        
+        // Render pricing packages
+        function renderPricingPackages() {
+            const container = document.querySelector('#pricing-section .lg\\:grid');
+            container.innerHTML = '';
+            
+            pricingPackages.forEach(pkg => {
+                const pricingCard = document.createElement('div');
+                pricingCard.className = `pricing-card bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-all duration-300 ${pkg.popular ? 'ring-2 ring-blue-500' : ''}`;
+                pricingCard.innerHTML = `
+                    <div class="p-6">
+                        ${pkg.popular ? `
+                            <div class="mb-4">
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                    Most Popular
+                                </span>
+                            </div>
+                        ` : ''}
+                        <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-2">${pkg.name}</h3>
+                        <p class="text-gray-500 dark:text-gray-400 mb-6">${pkg.description}</p>
+                        <div class="mb-8">
+                            <span class="text-4xl font-extrabold text-gray-900 dark:text-white">$${pkg.price}</span>
+                            <span class="text-base font-medium text-gray-500 dark:text-gray-400">/onetime</span>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            ${pkg.features.map(feature => `
+                                <li class="flex items-center">
+                                    <i class="fas fa-check text-green-500 mr-3"></i>
+                                    <span class="text-gray-600 dark:text-gray-300">${feature}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                        <button onclick="addPackageToCart('${pkg.id}')" class="w-full px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors duration-300 font-medium btn-pulse">
+                            Get Started
+                        </button>
+                    </div>
+                `;
+                container.appendChild(pricingCard);
+            });
+        }
+        
+        // Cart functions
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) return;
+            
+            const existingItem = cart.find(item => item.id === productId && item.type === 'product');
+            if (existingItem) {
+                existingItem.quantity += 1;
+            } else {
+                cart.push({
+                    id: productId,
+                    name: product.name,
+                    price: product.price,
+                    quantity: 1,
+                    type: 'product'
+                });
+            }
+            
+            updateCart();
+            showToast(`${product.name} added to cart`);
+        }
+        
+        function addPackageToCart(packageId) {
+            const pkg = pricingPackages.find(p => p.id === packageId);
+            if (!pkg) return;
+            
+            // Remove any existing package (only one package allowed at a time)
+            cart = cart.filter(item => item.type !== 'package');
+            
+            cart.push({
+                id: packageId,
+                name: `${pkg.name} Package`,
+                price: pkg.price,
+                quantity: 1,
+                type: 'package'
+            });
+            
+            updateCart();
+            showToast(`${pkg.name} package added to cart`);
+        }
+        
+        function updateCart() {
+            // Update cart items display
+            if (cart.length === 0) {
+                cartItemsContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-8">Your cart is empty</p>';
+            } else {
+                cartItemsContainer.innerHTML = cart.map(item => `
+                    <div class="cart-item py-4 flex items-center">
+                        <div class="flex-1">
+                            <h4 class="text-sm font-medium text-gray-900 dark:text-white">${item.name}</h4>
+                            <p class="text-sm text-gray-500 dark:text-gray-400">$${item.price} x ${item.quantity}</p>
+                        </div>
+                        <div class="ml-4">
+                            <span class="text-sm font-medium text-gray-900 dark:text-white">$${(item.price * item.quantity).toFixed(2)}</span>
+                            <button onclick="removeFromCart('${item.id}', '${item.type}')" class="ml-2 text-red-500 hover:text-red-700">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            // Calculate subtotal
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            
+            // Update cart totals
+            cartSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+            
+            // Update cart count
+            const itemCount = cart.reduce((count, item) => count + item.quantity, 0);
+            cartCount.textContent = itemCount;
+            mobileCartCount.textContent = itemCount;
+        }
+        
+        function removeFromCart(id, type) {
+            cart = cart.filter(item => !(item.id === id && item.type === type));
+            updateCart();
+        }
+        
+        function toggleCart() {
+            cartSidebar.classList.toggle('translate-x-full');
+            cartSidebar.classList.toggle('translate-x-0');
+        }
+        
+        // Navigation functions
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section-content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            // Show selected section
+            document.getElementById(`${sectionId}-section`).classList.remove('hidden');
+            
+            // Update active nav link
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('border-blue-500', 'text-gray-900', 'dark:text-white');
+                link.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-300');
+            });
+            
+            const activeLink = document.querySelector(`.nav-link[onclick="showSection('${sectionId}')"]`);
+            if (activeLink) {
+                activeLink.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-300');
+                activeLink.classList.add('border-blue-500', 'text-gray-900', 'dark:text-white');
+            }
+            
+            // Close mobile menu if open
+            mobileMenu.classList.add('hidden');
+            
+            // Close cart if open
+            cartSidebar.classList.add('translate-x-full');
+            cartSidebar.classList.remove('translate-x-0');
+            
+            // Update current section
+            currentSection = sectionId;
+            
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+        
+        function toggleUserMenu() {
+            userMenu.classList.toggle('hidden');
+        }
+        
+        function toggleMobileMenu() {
+            mobileMenu.classList.toggle('hidden');
+        }
+        
+        // Order functions
+        function placeOrder() {
+            if (cart.length === 0) {
+                showToast('Your cart is empty', 'error');
+                return;
+            }
+            
+            // In a real implementation, you would send this data to your server
+            // For this demo, we'll just show a success message
+            setTimeout(() => {
+                // Clear cart
+                cart = [];
+                updateCart();
+                
+                // Show success message
+                showSection('order-success');
+            }, 1000);
+        }
+        
+        // Contact form functions
+        function sendMessage() {
+            const name = document.getElementById('contact-name').value;
+            const email = document.getElementById('contact-email').value;
+            const subject = document.getElementById('contact-subject').value;
+            const message = document.getElementById('contact-message').value;
+            
+            if (!name || !email || !subject || !message) {
+                showToast('Please fill in all fields', 'error');
+                return;
+            }
+            
+            // In a real implementation, you would send this data to your server
+            // For this demo, we'll simulate sending the message
+            setTimeout(() => {
+                showToast('Message sent successfully! We will contact you soon.', 'success');
+                document.getElementById('contact-form').reset();
+            }, 1500);
+            
+            // This would be the actual mailto link in a real implementation
+            // window.location.href = `mailto:ibrahimparray066@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`)}`;
+        }
+        
+        // Utility functions
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-md shadow-lg text-white ${
+                type === 'success' ? 'bg-green-500' : 'bg-red-500'
+            }`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+        
+        function logout() {
+            showToast('You have been logged out');
+            showSection('home');
+        }
+    </script>
+</body>
+</html>
